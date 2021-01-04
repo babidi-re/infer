@@ -143,7 +143,10 @@ buck-out/
 /infer/src/atd/*_t.mli
 /infer/src/atd/clang_*.ml
 /infer/src/atd/clang_*.mli
-
+/infer/src/ghidra-atd/*_j.ml
+/infer/src/ghidra-atd/*_t.ml
+/infer/src/ghidra-atd/*_j.mli
+/infer/src/ghidra-atd/*_t.mli
 # intelliJ files
 /infer/src/backend/.projectSettings
 

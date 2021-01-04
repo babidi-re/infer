@@ -1,0 +1,3 @@
+[submodule "infer/src/ghidra-atds"]
+	path = infer/src/ghidra-atds
+	url = git@github.com:babidi-re/ghidra-atds.git

@@ -74,6 +74,21 @@ let infer_exe_stanza =
     (if java then "" else "-open JavaFrontendStubs")
     extlib_if_java
 
+let inferserver_exe_stanza =
+  Printf.sprintf
+    {|(executable
+ (name inferServer)
+ (modes byte_complete exe)
+ (modules InferServer)
+ (flags (:standard -open Core -open IStdlib -open IStd -open IBase -open IR -open Backend -open Integration -open Biabduction -open TestDeterminators -open ClangFrontend -open ASTLanguage %s -open JavaFrontend %s))
+ (libraries %s core IStdlib IBase IR Backend Integration Biabduction TestDeterminators ClangFrontend ASTLanguage)
+ (preprocess (pps ppx_compare))
+ (promote (until-clean) (into ../bin))
+)|}
+    (if clang then "" else "-open ClangFrontendStubs")
+    (if java then "" else "-open JavaFrontendStubs")
+    extlib_if_java
+
 
 let inferunit_stanza =
   Printf.sprintf
@@ -122,7 +137,7 @@ let inferCreateTraceViewLinks_stanza =
 
 (** The build stanzas to be passed to dune *)
 let stanzas =
-  [env_stanza; infer_exe_stanza; inferunit_stanza; infertop_stanza]
+  [env_stanza; infer_exe_stanza; inferserver_exe_stanza; inferunit_stanza; infertop_stanza]
   @ if facebook then [inferCreateTraceViewLinks_stanza] else []
 
 

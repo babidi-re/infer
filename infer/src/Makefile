@@ -117,6 +117,19 @@ check: src_build_common
 # BUILD_MODE=dev` and then try with another profile `make BUILD_MODE=opt`, make won't
 # trigger a rebuild since it has only partial view on the dependencies.
 
+GHIDRA_ATD_SOURCES=$(wildcard ghidra-atds/*.atd)
+$(warning $(GHIDRA_ATD_SOURCES))
+GENERATED_ATD_ML=$(patsubst ghidra-atds/%.atd, ghidra-atds/%_j.ml, $(GHIDRA_ATD_SOURCES)) $(patsubst ghidra-atds/%.atd, ghidra-atds/%_t.ml, $(GHIDRA_ATD_SOURCES)) $(patsubst ghidra-atds/%.atd, ghidra-atds/%_j.mli, $(GHIDRA_ATD_SOURCES)) $(patsubst ghidra-atds/%.atd, ghidra-atds/%_t.mli, $(GHIDRA_ATD_SOURCES))
+
+$(warning $(GENERATED_ATD_ML))
+
+ghidra-atds/%_j.ml ghidra-atds/%_j.mli ghidra-atds/%_t.mli:  ghidra-atds/%.atd
+	atdgen -j $< && atdgen -t $<
+
+.PHONY: inferServer.exe
+inferServer.exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) $(GENERATED_ATD_ML)
+	$(QUIET) $(DUNE_BUILD) inferServer.exe
+
 .PHONY: $(INFER_BIN).exe
 $(INFER_BIN).exe:  $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)$(DUNE_BUILD) $(INFER_CONFIG_TARGETS)
@@ -257,14 +270,18 @@ java/dune: java/dune.in
 opensource/dune: opensource/dune.in
 unit/dune: unit/dune.in
 
+
+
 .PHONY: clean
 clean:
 	$(MAKE) -C deadcode clean
+	$(REMOVE) $
 	$(REMOVE) $(INFER_TARGET)
 	$(REMOVE) toplevel.mlpack
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
 	$(REMOVE) $(GENERATED_FROM_AUTOCONF)
 	$(REMOVE) $(GENERATED_DUNES)
+	$(REMOVE) $(GENERATED_ATD_ML)
 	$(REMOVE) base/Version.ml.tmp.* dune.tmp.* dune-workspace.tmp.*
 #	be a bit more aggressive than needed with what we remove here so that stale binaries that
 #	only existed in previous versions get removed as well
