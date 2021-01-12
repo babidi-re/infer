@@ -8,6 +8,7 @@
 #pragma once
 
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <stdlib.h>
 #include <string>
@@ -130,6 +131,7 @@ class SimplePluginASTActionBase : public clang::PluginASTAction {
       options->outputFile = args[0];
       args.erase(args.begin());
     }
+    // std::cerr << options->outputFile << std::endl;
     options->loadValuesFromEnvAndMap(PluginASTOptions::makeMap(args));
     return true;
   }

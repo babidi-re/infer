@@ -131,6 +131,7 @@ let run_clang clang_command read =
 
 
 let run_clang clang_command read =
+  ClangCommand.pp Format.std_formatter clang_command;
   PerfEvent.(
     log (fun logger -> PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"clang" ())) ;
   let result = run_clang clang_command read in
