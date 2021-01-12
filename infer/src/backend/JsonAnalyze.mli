@@ -13,7 +13,8 @@ open! IStd
 module type NameParsers = sig
     val parse_procname: Yojson.Safe.t -> Procname.t
     val fieldname_of_string: string -> Fieldname.t
-  
+    val typename_of_classname: string -> Typ.Name.t
+
     val lang: Language.t
 end
   

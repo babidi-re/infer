@@ -9,13 +9,10 @@
 
 (** Main module for the analysis after the capture phase *)
 open! IStd
-open Utils
-open Yojson
 open Yojson.Safe.Util
 
 (* We use Yojson.Safe to parse json so it handles long integers, which cannot be handled by OCaml's basic integers *)
 
-module L = Logging
 module Hashtbl = Caml.Hashtbl
 
 module IntHash =
@@ -27,11 +24,11 @@ module IntHash =
 module IntTbl = Hashtbl.Make(IntHash)
 
 exception JsonParse_Error of string
-exception StringParse_Error of string
 
 module type NameParsers = sig
   val parse_procname: Yojson.Safe.t -> Procname.t
   val fieldname_of_string: string -> Fieldname.t
+  val typename_of_classname: string -> Typ.Name.t
 
   val lang: Language.t
 end
@@ -40,32 +37,31 @@ end
 *)
 
 module NameParsersToAnalyzer(NP: NameParsers) = struct
-  let parse_pair (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (json : Yojson.Safe.t) : ('a * 'b)=
+  let _parse_pair (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (json : Yojson.Safe.t) : ('a * 'b)=
     match (to_list json) with
     | (x::y::[]) -> (fstparse x, sndparse y)
     | _ -> raise (JsonParse_Error "JSON Parse Error: Expected pair, got something else")
 
-  let parse_triple (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (thdparse : Yojson.Safe.t -> 'c) (json : Yojson.Safe.t) : ('a * 'b * 'c) =
+  let _parse_triple (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (thdparse : Yojson.Safe.t -> 'c) (json : Yojson.Safe.t) : ('a * 'b * 'c) =
     match (to_list json) with
     | (x::y::z::[]) -> (fstparse x, sndparse y, thdparse z)
     | _ -> raise (JsonParse_Error "JSON Parse Error: Expected triple, got something else")
 
-  let parse_quadruple (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (thdparse : Yojson.Safe.t -> 'c) (frthparse : Yojson.Safe.t -> 'd) (json : Yojson.Safe.t) : ('a * 'b * 'c * 'd) =
+  let _parse_quadruple (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (thdparse : Yojson.Safe.t -> 'c) (frthparse : Yojson.Safe.t -> 'd) (json : Yojson.Safe.t) : ('a * 'b * 'c * 'd) =
     match (to_list json) with
     | (x::y::z::u::[]) -> (fstparse x, sndparse y, thdparse z, frthparse u)
     | _ -> raise (JsonParse_Error "JSON Parse Error: Expected quadruple, got something else")
 
-  let parse_quintuple (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (thdparse : Yojson.Safe.t -> 'c) (frthparse : Yojson.Safe.t -> 'd) (fithparse : Yojson.Safe.t -> 'e) (json : Yojson.Safe.t) : ('a * 'b * 'c * 'd * 'e) =
+  let _parse_quintuple (fstparse : Yojson.Safe.t -> 'a) (sndparse : Yojson.Safe.t -> 'b) (thdparse : Yojson.Safe.t -> 'c) (frthparse : Yojson.Safe.t -> 'd) (fithparse : Yojson.Safe.t -> 'e) (json : Yojson.Safe.t) : ('a * 'b * 'c * 'd * 'e) =
     match (to_list json) with
     | (x::y::z::u::v::[]) -> (fstparse x, sndparse y, thdparse z, frthparse u, fithparse v)
     | _ -> raise (JsonParse_Error "JSON Parse Error: Expected quintuple, got something else")
 
-  let parse_septuple (parse1 : Yojson.Safe.t -> 'a) (parse2 : Yojson.Safe.t -> 'b) (parse3 : Yojson.Safe.t -> 'c) (parse4 : Yojson.Safe.t -> 'd) (parse5 : Yojson.Safe.t -> 'e) (parse6 : Yojson.Safe.t -> 'f) (parse7 : Yojson.Safe.t -> 'g) (json : Yojson.Safe.t) : ('a * 'b * 'c * 'd * 'e * 'f * 'g) =
+  let _parse_septuple (parse1 : Yojson.Safe.t -> 'a) (parse2 : Yojson.Safe.t -> 'b) (parse3 : Yojson.Safe.t -> 'c) (parse4 : Yojson.Safe.t -> 'd) (parse5 : Yojson.Safe.t -> 'e) (parse6 : Yojson.Safe.t -> 'f) (parse7 : Yojson.Safe.t -> 'g) (json : Yojson.Safe.t) : ('a * 'b * 'c * 'd * 'e * 'f * 'g) =
     match (to_list json) with
     | (x::y::z::u::v::w::n::[]) -> (parse1 x, parse2 y, parse3 z, parse4 u, parse5 v, parse6 w, parse7 n)
     | _ -> raise (JsonParse_Error "JSON Parse Error: Expected septuple, got something else")
 
-  let typename_of_classname cn =  raise (Failure "Not implementd")
   let parse_list (eleparse : Yojson.Safe.t -> 'a) (json : Yojson.Safe.t) =
     List.map ~f:eleparse (to_list json)
   
@@ -94,7 +90,7 @@ module NameParsersToAnalyzer(NP: NameParsers) = struct
     let csu = to_string (member "csu_kind" json) in
     let name = to_string (member "name" json) in
     match csu with
-    | "Class" -> typename_of_classname name
+    | "Class" -> NP.typename_of_classname name
     | _ -> raise (JsonParse_Error "JSON Parse Error: Can only parse Class types so far.")
 
   let parse_unop (json : Yojson.Safe.t) =
@@ -128,7 +124,7 @@ module NameParsersToAnalyzer(NP: NameParsers) = struct
   let parse_typename (json : Yojson.Safe.t) =
     let tname = to_string (member "type_name_kind" json) in
     if String.equal tname "TN_typedef" then
-      typename_of_classname (to_string (member "name" json))
+      NP.typename_of_classname (to_string (member "name" json))
     else if String.equal tname "CsuTypeName" then
       parse_csu json (*what about if the name is <Module>*)
     else
@@ -138,7 +134,7 @@ module NameParsersToAnalyzer(NP: NameParsers) = struct
     Int64.of_string (Yojson.Safe.to_string json)
 
   let parse_intrep (json : Yojson.Safe.t) =
-    let s = to_bool (member "unsigned" json) in
+    let _s = to_bool (member "unsigned" json) in
     let v = parse_long (member "value" json) in
     let p = to_bool (member "is_pointer" json) in
     match (p,v) with
@@ -281,7 +277,7 @@ module NameParsersToAnalyzer(NP: NameParsers) = struct
       let pkind = parse_ptr_kind (member "kind" json) in
       Typ.mk (Typ.Tptr (t, pkind))
     else if String.equal type_kind "Tstruct" then
-      let tn = typename_of_classname (to_string (member "struct_name" json)) in
+      let tn = NP.typename_of_classname (to_string (member "struct_name" json)) in
       Typ.mk (Tstruct tn)
     else if String.equal type_kind "Tvar" then
       let tn = parse_typename (member "type_name" json) in
@@ -575,8 +571,8 @@ module NameParsersToAnalyzer(NP: NameParsers) = struct
       Logging.die InternalError "Unknown prune node kind %s" pnk
 
 
-  let parse_nodekind  (pd_id_to_pd : Procdesc.t IntTbl.t) (json : Yojson.Safe.t) =
-    let open Cfg in
+  let parse_nodekind  (_pd_id_to_pd : Procdesc.t IntTbl.t) (json : Yojson.Safe.t) =
+    (*let open Cfg in*)
     let nkname = to_string (member "nd_kind" json) in
     if String.equal nkname "StartNode" then
       Procdesc.Node.Start_node
@@ -598,9 +594,9 @@ module NameParsersToAnalyzer(NP: NameParsers) = struct
 
   let parse_node (pd_id_to_pd : Procdesc.t IntTbl.t) (nd_id_to_node : Procdesc.Node.t IntTbl.t) (nd_id_to_exn_nodes : (int list) IntTbl.t) (nd_id_to_pred_nodes : (int list) IntTbl.t) (nd_id_to_succ_nodes : (int list) IntTbl.t) (json : Yojson.Safe.t) =
     let nd_id = to_int (member "nd_id" json) in
-    let nd_temps = parse_list parse_ident (member "nd_temps" json) in
-    let nd_dead_pvars_after = parse_list parse_pvar (member "nd_dead_pvars_after" json) in
-    let nd_dead_pvars_before = parse_list parse_pvar (member "nd_dead_pvars_before" json) in
+    let _nd_temps = parse_list parse_ident (member "nd_temps" json) in
+    let _nd_dead_pvars_after = parse_list parse_pvar (member "nd_dead_pvars_after" json) in
+    let _nd_dead_pvars_before = parse_list parse_pvar (member "nd_dead_pvars_before" json) in
     IntTbl.add nd_id_to_exn_nodes nd_id (parse_list to_int (member "nd_exn_ids" json));
     let nd_instrs = parse_list parse_instr (member "nd_instrs" json) in
     let nd_kind = parse_nodekind pd_id_to_pd json in
